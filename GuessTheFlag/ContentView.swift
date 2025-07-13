@@ -29,6 +29,8 @@ struct ContentView: View {
     @State private var score = 0
     @State private var isGameOver = false
     @State private var questionAsked = 0
+    @State private var animationAmounts = [0.0, 0.0, 0.0]
+    @State private var selectedFlagIndex: Int? = nil
     
     var body: some View {
         ZStack {
@@ -62,9 +64,20 @@ struct ContentView: View {
                     ForEach(0..<3) { number in
                         Button {
                             flagTapped(number)
+                            withAnimation(.spring(duration: 1, bounce:  0.5)) {
+                                animationAmounts[number] += 360
+                            }
                         } label: {
                             FlagImage(countryName: countries[number])
                         }
+                        .rotation3DEffect(
+                            .degrees(animationAmounts[number]),
+                            axis: (x: 0, y: 1, z: 0)
+                        )
+                        .opacity(flagOpacity(number))
+                        .animation(.easeInOut(duration: 0.3), value: selectedFlagIndex)
+                        .scaleEffect(flagScale(number))
+                        .animation(.default, value: selectedFlagIndex)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -97,6 +110,8 @@ struct ContentView: View {
     }
     
     func flagTapped(_ number: Int) {
+        selectedFlagIndex = number
+        
         scoreTitle = number == correctAnswer
         ? "Correct"
         : "Wrong! That's the flag of \(countries[number])"
@@ -106,34 +121,27 @@ struct ContentView: View {
         
         isGameOver = questionAsked == 8
         showingScore = !isGameOver
-    
-/*
-        if number == correctAnswer {
-            scoreTitle = "Correct"
-            score += 1
-        } else {
-            scoreTitle = "Wrong! That's the flag of \(countries[number])"
-        }
-        
-        questionAsked += 1
-        
-        if questionAsked == 8 {
-            isGameOver = true
-        } else {
-            showingScore = true
-        }
- */
     }
     
     func askQuestion() {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
+        selectedFlagIndex = nil
     }
     
     func restartGame() {
         score = 0
         questionAsked = 0
+        selectedFlagIndex = nil
         askQuestion()
+    }
+    
+    private func flagOpacity(_ number: Int) -> Double {
+        selectedFlagIndex == nil ? 1.0 : (selectedFlagIndex == number ? 1.0 : 0.25)
+    }
+    
+    private func flagScale(_ number: Int) -> CGFloat {
+        selectedFlagIndex == nil ? 1.0 : (selectedFlagIndex != number ? 0.7 : 1.0)
     }
 }
 
